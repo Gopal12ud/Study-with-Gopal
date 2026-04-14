@@ -1,0 +1,199 @@
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">15-day interactive study plan for 7 subjects with daily checklists and progress tracking</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.header{padding:1.5rem 0 1rem}
+.header h1{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.header p{font-size:13px;color:var(--color-text-secondary);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.stat-lbl{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.progress-bar{width:100%;height:6px;background:var(--color-border-tertiary);border-radius:3px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:#1D9E75;border-radius:3px;transition:width 0.4s}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.tab{padding:6px 12px;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;cursor:pointer;color:var(--color-text-secondary)}
+.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500;border-color:var(--color-border-primary)}
+.day-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.day-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px;cursor:pointer;transition:border-color 0.15s}
+.day-card:hover{border-color:var(--color-border-secondary)}
+.day-card.selected{border:1.5px solid #1D9E75}
+.day-card.complete{background:var(--color-background-secondary)}
+.day-num{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.day-subject{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px;line-height:1.3}
+.day-dot-row{display:flex;gap:3px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--color-border-secondary)}
+.dot.done{background:#1D9E75;border-color:#1D9E75}
+.detail-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.detail-title{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+.detail-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.badge{font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md)}
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:pointer;transition:background 0.1s}
+.task:hover{background:var(--color-background-secondary)}
+.task.done-task{opacity:0.6}
+.task-check{width:18px;height:18px;min-width:18px;border-radius:4px;border:1.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;margin-top:1px}
+.task-check.checked{background:#1D9E75;border-color:#1D9E75;color:#fff;font-size:11px}
+.task-text{font-size:14px;color:var(--color-text-primary);line-height:1.4}
+.task-time{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.subject-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+
+<div class="header">
+  <h1>15-day final exam study plan</h1>
+  <p>7 subjects · 5–6 hours/day · Spaced revision built in</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="s-done">0</div><div class="stat-lbl">Tasks done</div></div>
+  <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total tasks</div></div>
+  <div class="stat"><div class="stat-val" id="s-days">0</div><div class="stat-lbl">Days cleared</div></div>
+  <div class="stat"><div class="stat-val" id="s-pct">0%</div><div class="stat-lbl">Progress</div></div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+
+<div class="tabs" id="tabs"></div>
+<div class="day-grid" id="day-grid"></div>
+<div class="detail-panel" id="detail-panel" style="display:none"></div>
+
+<div class="subject-legend" id="legend"></div>
+
+<script>
+const SUBJECTS = [
+  {id:'dotnet', name:'.NET Framework', short:'.NET', color:'#534AB7', tasks:['CLR & managed code basics','ASP.NET Web Forms overview','ADO.NET & database connectivity','MVC pattern in ASP.NET','LINQ fundamentals','Revision: past questions (.NET)']},
+  {id:'testing', name:'Software Testing', short:'S. Testing', color:'#0F6E56', tasks:['SDLC & testing types (unit, integration, system)','Black-box vs white-box testing','Test case design techniques','Bug lifecycle & defect tracking','Automation testing overview','Revision: past questions (Testing)']},
+  {id:'advjava', name:'Advanced Java', short:'Adv. Java', color:'#993C1D', tasks:['JDBC & database ops','Servlets & JSP lifecycle','JNDI & EJB concepts','Multithreading in Java','Design patterns (Factory, Singleton)','Revision: past questions (Adv. Java)']},
+  {id:'rit', name:'Recent Trends in IT', short:'R. Trends', color:'#993556', tasks:['Cloud computing models (IaaS, PaaS, SaaS)','IoT architecture & applications','AI & ML key concepts','Blockchain basics','Big Data & Hadoop overview','Revision: past questions (R. Trends)']},
+  {id:'python', name:'Python', short:'Python', color:'#3B6D11', tasks:['Python data types & collections','File I/O & exception handling','OOP in Python (classes, inheritance)','Libraries: NumPy, Pandas basics','Flask/Django intro (web basics)','Revision: past questions (Python)']},
+  {id:'oose', name:'OOSE', short:'OOSE', color:'#185FA5', tasks:['OOAD fundamentals & UML diagrams','Use case & class diagrams','Sequence & activity diagrams','Design patterns (GRASP, GoF)','Software architecture styles','Revision: past questions (OOSE)']},
+  {id:'corejava', name:'Core Java', short:'C. Java', color:'#854F0B', tasks:['OOP concepts: inheritance, polymorphism','Interfaces, abstract classes, generics','Collections framework deep dive','Exception handling & I/O streams','Threads & concurrency','Revision: past questions (Core Java)']}
+];
+
+const SCHEDULE = [
+  {day:1,  subj:'corejava',  focus:'OOP & core syntax',         phase:'learn'},
+  {day:2,  subj:'corejava',  focus:'Collections & threads',     phase:'learn'},
+  {day:3,  subj:'advjava',   focus:'JDBC, Servlets, JSP',        phase:'learn'},
+  {day:4,  subj:'advjava',   focus:'EJB, patterns, revision',   phase:'learn'},
+  {day:5,  subj:'python',    focus:'Syntax, OOP, libraries',     phase:'learn'},
+  {day:6,  subj:'python',    focus:'Web basics & revision',     phase:'learn'},
+  {day:7,  subj:'dotnet',    focus:'.NET & ASP.NET',            phase:'learn'},
+  {day:8,  subj:'oose',      focus:'UML & design patterns',     phase:'learn'},
+  {day:9,  subj:'testing',   focus:'Test types & techniques',   phase:'learn'},
+  {day:10, subj:'rit',       focus:'Cloud, IoT, AI/ML',         phase:'learn'},
+  {day:11, subj:'corejava',  focus:'Revision + mock questions', phase:'revise'},
+  {day:12, subj:'advjava',   focus:'Revision + mock questions', phase:'revise'},
+  {day:13, subj:'python',    focus:'Revision + mock questions', phase:'revise'},
+  {day:14, subj:'oose',      focus:'OOSE + .NET revision',      phase:'revise'},
+  {day:15, subj:'testing',   focus:'Testing + R. Trends review',phase:'revise'},
+];
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem('sp15') || '{}'); } catch(e) {}
+const save = () => { try { localStorage.setItem('sp15', JSON.stringify(state)); } catch(e) {} };
+
+let selectedDay = 1;
+let filterPhase = 'all';
+
+function getSubj(id) { return SUBJECTS.find(s=>s.id===id); }
+
+function taskKey(day, ti) { return `d${day}_t${ti}`; }
+
+function renderLegend() {
+  const el = document.getElementById('legend');
+  el.innerHTML = SUBJECTS.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.short}</div>`).join('');
+}
+
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  const tabs = [{id:'all',label:'All days'},{id:'learn',label:'Learn (1–10)'},{id:'revise',label:'Revise (11–15)'}];
+  el.innerHTML = tabs.map(t=>`<button class="tab ${filterPhase===t.id?'active':''}" onclick="setFilter('${t.id}')">${t.label}</button>`).join('');
+}
+
+function setFilter(f) { filterPhase = f; renderGrid(); renderTabs(); }
+
+function renderGrid() {
+  const el = document.getElementById('day-grid');
+  const days = SCHEDULE.filter(d=> filterPhase==='all' || d.phase===filterPhase);
+  el.innerHTML = days.map(d=>{
+    const subj = getSubj(d.subj);
+    const tasks = subj.tasks;
+    const done = tasks.filter((_,i)=>state[taskKey(d.day,i)]).length;
+    const complete = done === tasks.length;
+    return `<div class="day-card ${selectedDay===d.day?'selected':''} ${complete?'complete':''}" onclick="selectDay(${d.day})">
+      <div class="day-num">Day ${d.day} · <span style="color:${subj.color}">${subj.short}</span></div>
+      <div class="day-subject">${d.focus}</div>
+      <div class="day-dot-row">${tasks.map((_,i)=>`<div class="dot ${state[taskKey(d.day,i)]?'done':''}"></div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectDay(d) {
+  selectedDay = d;
+  renderGrid();
+  renderDetail();
+}
+
+function renderDetail() {
+  const panel = document.getElementById('detail-panel');
+  const d = SCHEDULE.find(x=>x.day===selectedDay);
+  if(!d){panel.style.display='none';return;}
+  const subj = getSubj(d.subj);
+  const tasks = subj.tasks;
+  const done = tasks.filter((_,i)=>state[taskKey(d.day,i)]).length;
+  panel.style.display='block';
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-title">Day ${d.day} — ${subj.name}</div>
+        <div class="detail-sub">${d.focus} · ${done}/${tasks.length} tasks done</div>
+      </div>
+      <div class="badge" style="background:${d.phase==='revise'?'#FAEEDA':'#E1F5EE'};color:${d.phase==='revise'?'#854F0B':'#0F6E56'}">${d.phase==='revise'?'Revision':'Learn'}</div>
+    </div>
+    <div class="task-list">
+      ${tasks.map((t,i)=>{
+        const k=taskKey(d.day,i);
+        const dk=state[k];
+        return `<div class="task ${dk?'done-task':''}" onclick="toggleTask('${k}')">
+          <div class="task-check ${dk?'checked':''}">${dk?'✓':''}</div>
+          <div><div class="task-text">${t}</div><div class="task-time">~${i<5?'50–60':'30–40'} min</div></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function toggleTask(k) {
+  state[k] = !state[k];
+  save();
+  renderGrid();
+  renderDetail();
+  renderStats();
+}
+
+function renderStats() {
+  let total=0, done=0, daysDone=0;
+  SCHEDULE.forEach(d=>{
+    const subj=getSubj(d.subj);
+    total+=subj.tasks.length;
+    const dd=subj.tasks.filter((_,i)=>state[taskKey(d.day,i)]).length;
+    done+=dd;
+    if(dd===subj.tasks.length) daysDone++;
+  });
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-days').textContent=daysDone;
+  document.getElementById('s-pct').textContent=Math.round(done/total*100)+'%';
+  document.getElementById('prog').style.width=Math.round(done/total*100)+'%';
+}
+
+renderLegend();
+renderTabs();
+renderGrid();
+selectDay(1);
+renderStats();
+</script>
